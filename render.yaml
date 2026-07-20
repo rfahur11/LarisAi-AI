@@ -1,0 +1,22 @@
+services:
+  # ============================================================
+  # AI Engine (Python FastAPI)
+  # ============================================================
+  - type: web
+    name: larisai-ai-engine
+    runtime: docker
+    repo: https://github.com/rfahur11/LarisAi-AI
+    dockerfilePath: Dockerfile
+    dockerContext: .
+    plan: free
+    envVars:
+      - key: PORT
+        value: 8001
+      - key: MONGODB_URI
+        value: mongodb+srv://rfahrur6045_db_user:admin987@cluster0.2q0huva.mongodb.net/?appName=Cluster0
+      - key: MONGODB_DB_NAME
+        value: larisai
+      - key: WHATSAPP_SERVICE_URL
+        value: https://larisai-whatsapp.onrender.com/api/v1/whatsapp/send
+      - key: WHATSAPP_TEST_DESTINATION
+        value: "62895380146029"
