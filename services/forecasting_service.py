@@ -1,15 +1,15 @@
 import pandas as pd
 from datetime import datetime, timedelta
 import mlflow
-from typing import List
+from typing import List, Optional
 from repositories.ai_repo import AIRepository
 from models.dto.ai_dto import StockoutPrediction
 
 class ForecastingService:
     @staticmethod
-    async def predict_stockouts() -> List[StockoutPrediction]:
-        products = await AIRepository.get_active_products()
-        transactions = await AIRepository.get_valid_transactions()
+    async def predict_stockouts(store_id: Optional[str] = None) -> List[StockoutPrediction]:
+        products = await AIRepository.get_active_products(store_id=store_id)
+        transactions = await AIRepository.get_valid_transactions(store_id=store_id)
         
         if not products:
             return []
@@ -60,9 +60,13 @@ class ForecastingService:
             if burn_rate > 0:
                 days_until = int(current_stock / burn_rate)
                 pred_date = (now + timedelta(days=days_until)).strftime("%Y-%m-%d")
+            elif current_stock <= 5:
+                # Emergency heuristic for critical stock even with no recent sales data
+                days_until = 0 if current_stock == 0 else (1 if current_stock <= 2 else 2)
+                pred_date = (now + timedelta(days=days_until)).strftime("%Y-%m-%d")
                 
-            # We only want to alert if stock will run out in less than 7 days
-            if days_until < 7 and current_stock > 0:
+            # Alert if stock will run out in less than 7 days, OR if current stock <= 5
+            if days_until < 7 or current_stock <= 5:
                 predictions.append(StockoutPrediction(
                     product_id=p_id,
                     barcode=product.get("barcode", ""),
@@ -70,13 +74,15 @@ class ForecastingService:
                     category=product.get("category", ""),
                     current_stock=current_stock,
                     daily_burn_rate=round(burn_rate, 2),
-                    days_until_stockout=days_until,
+                    days_until_stockout=max(0, days_until),
                     predicted_stockout_date=pred_date
                 ))
                 
         try:
             with mlflow.start_run(run_name="stockout_prediction"):
                 mlflow.log_param("model_type", "Simple Moving Average (30 days)")
+                if store_id:
+                    mlflow.log_param("store_id", store_id)
                 mlflow.log_metric("predictions_count", len(predictions))
         except Exception as e:
             print(f"Warning: MLflow tracking failed: {e}")

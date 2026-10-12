@@ -13,9 +13,9 @@ from services.wa_service import WhatsAppService
 router = APIRouter(prefix="/ai", tags=["AI Engine"])
 
 @router.get("/forecasting/stockouts", response_model=StockoutPredictionResponse)
-async def get_stockout_predictions():
+async def get_stockout_predictions(store_id: str = None):
     try:
-        predictions = await ForecastingService.predict_stockouts()
+        predictions = await ForecastingService.predict_stockouts(store_id=store_id)
         return StockoutPredictionResponse(
             predictions=predictions,
             generated_at=datetime.now().isoformat()

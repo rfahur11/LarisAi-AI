@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     
     # MongoDB
     MONGODB_URI: str = "mongodb://localhost:27017" # Default, overridden by docker-compose
-    MONGODB_DB_NAME: str = "larisai"
+    MONGODB_DB_NAME: str = "larisai_pos"
     
     # MLflow
     MLFLOW_TRACKING_URI: str = "http://localhost:5000"
